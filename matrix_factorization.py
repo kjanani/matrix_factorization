@@ -55,11 +55,12 @@ def computeLoss_temporalNMF(K,Q,Qt_1,M,trKK,Qt_1Qt_1T,lambda_,alpha):
 
     
     
-def temporalNMF(K,Qt_1,no_topics,alpha,lambda_,epsilon,maxiter):
+def temporalNMF(K,Qt_1,no_topics,alpha,lambda_,epsilon,maxiter,my_seed):
     # ||K - (Q^T)Q|| + ||K - Q^TMQt_1|| + \alpha * (||Q||_1 + ||M||_1)
     # Solve ||K - (Q^T)X|| wrt X first (by Least Squares)
     # Then solve ||K - (A^T)Q|| + ||K - Q^TMQt_1||wrt A (mult updates) (Here Q = X from before)
 
+    numpy.random.seed(my_seed);
     Q = scipy.sparse.rand(no_topics,K.shape[0],density=1);
     Q = numpy.absolute(Q);
 
@@ -95,20 +96,20 @@ def temporalNMF(K,Qt_1,no_topics,alpha,lambda_,epsilon,maxiter):
         MQt_1Qt_1TMTQ = MQt_1Qt_1TMT.dot(Q);
         denom = MQt_1Qt_1TMTQ.toarray() + alpha;
         
-        Q = numpy.divide(num,denom);
+        Q = numpy.divide(num*10**8,denom);
         Q = scipy.sparse.csc_matrix(Q);
 
         # now, update M
         QKQt_1T = Q.dot(Qt_1KT.transpose());
-        num = numpy.multiply(M.toarray(), QKQt_1T.toarray());
+        num = numpy.multiply(M.toarray(), QKQt_1T.toarray() + lambda_*numpy.eye(M.shape[0],dtype=float));
 
         QQT = Q.dot(Q.transpose());
         QQTMQt_1Qt_1T = QQT.dot(M).dot(Qt_1Qt_1T);
         denom = QQTMQt_1Qt_1T.toarray() + lambda_*M.toarray() + alpha;
 
-        M = numpy.divide(num,denom);
-        row_sum = numpy.sum(M,1);
-        M = M/row_sum[:,numpy.newaxis];
+        M = numpy.divide(num*10**8,denom);
+        #row_sum = numpy.sum(M,1);
+        #M = M/row_sum[:,numpy.newaxis];
         M = scipy.sparse.csc_matrix(M);
 
         prevLoss = currentLoss;
@@ -120,12 +121,13 @@ def temporalNMF(K,Qt_1,no_topics,alpha,lambda_,epsilon,maxiter):
     return (Q,M);
 
 
-def symNMF(K,no_topics,alpha,epsilon,maxiter):
+def symNMF(K,no_topics,alpha,epsilon,maxiter,my_seed):
     # ||K - (Q^T)Q|| + \alpha * ||Q||_1
     # Solve ||K - (Q^T)X|| wrt X first (by Least Squares)
     # Then solve ||K - (A^T)Q|| wrt A (mult updates) (Here Q = X from before)
     
     # randomly initialize a no_topics x K.shape[0] matrix
+    numpy.random.seed(my_seed);
     Q = scipy.sparse.rand(no_topics,K.shape[0],density=1);
     Q = numpy.absolute(Q);
 
@@ -162,7 +164,7 @@ def symNMF(K,no_topics,alpha,epsilon,maxiter):
 
     return Q;
 
-def topWords(Q,fid):
+def topWords(Q):
 
     all_vocab = list(map(lambda x: x.strip().split('\t')[1],open('../sorted_all_vocab_Nov_3_2015.txt','r').readlines()[:29000]));
     Q = Q.toarray();
@@ -171,8 +173,6 @@ def topWords(Q,fid):
     for i in range(Q.shape[0]):
         indices = sorted(zip(Q[i,:],range(len(Q[i,:]))),key = lambda x: x[0], reverse=True)[:10];
         words = map(lambda x: all_vocab[x[1]], indices);
-        for w in words:
-            fid.write(w + ' ');
-        fid.write('\n');
-        print(words)
         list_of_words.append(words);
+
+    return list_of_words;
