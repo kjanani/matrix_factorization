@@ -7,7 +7,9 @@ import numpy, scipy, scipy.sparse
 
 
 def tr(A,B):
-
+    '''
+    Computes the trace of A*B.
+    '''
     S_A = numpy.reshape(A.toarray(),A.shape[0]*A.shape[1]); # vector
     S_B = numpy.reshape(B.toarray(),B.shape[0]*B.shape[1]); # vector
     return numpy.multiply(S_A,S_B).sum() # element-wise multiply and then sum
@@ -18,6 +20,7 @@ def trAA(A):
 
 
 def computeLoss_symNMF(K,Q,trKK,alpha):
+
 
     loss = trKK;
 
@@ -56,10 +59,11 @@ def computeLoss_temporalNMF(K,Q,Qt_1,M,trKK,Qt_1Qt_1T,lambda_,alpha):
     
     
 def temporalNMF(K,Qt_1,no_topics,alpha,lambda_,epsilon,maxiter,my_seed):
-    # ||K - (Q^T)Q|| + ||K - Q^TMQt_1|| + \alpha * (||Q||_1 + ||M||_1)
-    # Solve ||K - (Q^T)X|| wrt X first (by Least Squares)
-    # Then solve ||K - (A^T)Q|| + ||K - Q^TMQt_1||wrt A (mult updates) (Here Q = X from before)
-
+    '''
+    ||K - (Q^T)Q|| + ||K - Q^TMQt_1|| + \alpha * (||Q||_1 + ||M||_1)
+    Solve ||K - (Q^T)X|| wrt X first (by Least Squares)
+    Then solve ||K - (A^T)Q|| + ||K - Q^TMQt_1|| wrt A (mult updates) (Here Q = X from before)
+    '''
     numpy.random.seed(my_seed);
     Q = scipy.sparse.rand(no_topics,K.shape[0],density=1);
     Q = numpy.absolute(Q);
@@ -122,11 +126,13 @@ def temporalNMF(K,Qt_1,no_topics,alpha,lambda_,epsilon,maxiter,my_seed):
 
 
 def symNMF(K,no_topics,alpha,epsilon,maxiter,my_seed):
-    # ||K - (Q^T)Q|| + \alpha * ||Q||_1
-    # Solve ||K - (Q^T)X|| wrt X first (by Least Squares)
-    # Then solve ||K - (A^T)Q|| wrt A (mult updates) (Here Q = X from before)
+    '''
+    ||K - (Q^T)Q|| + \alpha * ||Q||_1
+    Solve ||K - (Q^T)X|| wrt X first (by Least Squares)
+    Then solve ||K - (A^T)Q|| wrt A (mult updates) (Here Q = X from before)
     
-    # randomly initialize a no_topics x K.shape[0] matrix
+    randomly initialize a no_topics x K.shape[0] matrix
+    '''
     numpy.random.seed(my_seed);
     Q = scipy.sparse.rand(no_topics,K.shape[0],density=1);
     Q = numpy.absolute(Q);
@@ -164,9 +170,9 @@ def symNMF(K,no_topics,alpha,epsilon,maxiter,my_seed):
 
     return Q;
 
-def topWords(Q):
+def topWords(Q,vocab_file):
 
-    all_vocab = list(map(lambda x: x.strip().split('\t')[1],open('../sorted_all_vocab_Nov_3_2015.txt','r').readlines()[:29000]));
+    all_vocab = list(map(lambda x: x.strip().split('\t')[1],open(vocab_file,'r').readlines()[:3470]));
     Q = Q.toarray();
     
     list_of_words = [];
